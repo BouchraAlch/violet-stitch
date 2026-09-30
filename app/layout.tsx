@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { CartProvider } from '@/context/CartContext'
 import Navbar from '@/components/Navbar'
+import Footer from '@/components/Footer'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -18,10 +19,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.className} flex flex-col min-h-screen antialiased bg-purple-50/30 text-gray-800`}>
         <CartProvider>
+          {/* Global Navigation Bar */}
           <Navbar />
-          <main className="min-h-[calc(100vh-4rem)] bg-purple-50/30">{children}</main>
+
+          {/* Main Content Viewport */}
+          <main className="flex-1">{children}</main>
+
+          {/* Global Footer */}
+          <Footer />
         </CartProvider>
       </body>
     </html>

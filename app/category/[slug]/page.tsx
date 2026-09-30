@@ -2,54 +2,49 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import Navbar from '@/components/Navbar'
-import Footer from '@/components/Footer'
 import ProductCard from '@/components/ProductCard'
 import { Product } from '@/lib/types/database'
 import { createClient } from '@/lib/supabase/client'
 
-const categoryTitles: Record<string, { title: string; subtitle: string }> = {
-  flowers: {
-    title: 'Crochet Flowers',
-    subtitle: 'Handcrafted floral arrangements that stay vibrant forever.',
-  },
-  keychains: {
-    title: 'Crochet Keychains',
-    subtitle: 'Cute and detailed accessories designed to follow you everywhere.',
-  },
-  others: {
-    title: 'Other Creations',
-    subtitle: 'Unique handmade items crafted with love and care.',
-  },
-}
-
-export default function CategoryPage() {
+export default function CategorySlugPage() {
   const params = useParams()
-  const slug = (params.slug as string) || 'flowers'
+  const slug = (params?.slug as string) || ''
   const supabase = createClient()
 
   const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState<boolean>(true)
-
-  const currentCategory = categoryTitles[slug] || {
-    title: slug.charAt(0).toUpperCase() + slug.slice(1),
-    subtitle: 'Handmade crochet items tailored just for you.',
-  }
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function fetchCategoryProducts() {
+      if (!slug) return
       setLoading(true)
 
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('category', slug)
-        .order('created_at', { ascending: false })
+      const normalizedSlug = slug.toLowerCase()
+      let query = supabase.from('products').select('*')
 
-      if (error) {
-        console.error('Error fetching category products:', error.message)
-      } else if (data) {
+      if (
+        normalizedSlug === 'flower' ||
+        normalizedSlug === 'flowers' ||
+        normalizedSlug === 'flower-stems' ||
+        normalizedSlug === 'stems'
+      ) {
+        query = query.or('category.ilike.%flower%,category.ilike.%stem%')
+      } else if (normalizedSlug === 'bouquet' || normalizedSlug === 'bouquets') {
+        query = query.or('category.ilike.%bouquet%')
+      } else if (normalizedSlug === 'leaf' || normalizedSlug === 'leaves') {
+        query = query.or('category.ilike.%leaf%,category.ilike.%leaves%')
+      } else if (normalizedSlug === 'paper' || normalizedSlug === 'papers') {
+        query = query.or('category.ilike.%paper%')
+      } else {
+        query = query.ilike('category', `%${normalizedSlug}%`)
+      }
+
+      const { data, error } = await query
+
+      if (data) {
         setProducts(data)
+      } else if (error) {
+        console.error('Error fetching category products:', error)
       }
 
       setLoading(false)
@@ -58,43 +53,60 @@ export default function CategoryPage() {
     fetchCategoryProducts()
   }, [slug])
 
+  const formatTitle = (text: string) => {
+    switch (text.toLowerCase()) {
+      case 'bouquet':
+      case 'bouquets':
+        return 'Ready-to-Gift Bouquets'
+      case 'flower':
+      case 'flowers':
+      case 'flower-stems':
+      case 'stems':
+        return 'Individual Flower items'
+      case 'leaf':
+      case 'leaves':
+        return 'Leaves & Greenery'
+      case 'paper':
+      case 'papers':
+        return 'Wrapping Paper & Packaging'
+      default:
+        return text.charAt(0).toUpperCase() + text.slice(1)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
-      <Navbar />
+      {/* Category Hero Header Banner */}
+      <section className="bg-gradient-to-r from-purple-900 via-purple-850 to-purple-900 text-white py-12 px-6 text-center border-b border-purple-800">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight">
+            {formatTitle(slug)}
+          </h1>
+        </div>
+      </section>
 
-      {/* Category Header */}
-      <div className="bg-purple-900 text-white pt-28 pb-16 px-4 sm:px-6 lg:px-8 text-center">
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-3 text-purple-100">
-          {currentCategory.title}
-        </h1>
-        <p className="text-base md:text-lg text-purple-200/90 max-w-xl mx-auto font-light">
-          {currentCategory.subtitle}
-        </p>
-      </div>
-
-      {/* Product Grid */}
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
+      {/* Main Content Grid */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-grow">
         {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 animate-pulse">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 animate-pulse">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-gray-200 h-80 rounded-2xl" />
+              <div key={i} className="bg-gray-200 h-72 rounded-2xl" />
             ))}
           </div>
         ) : products.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm my-8">
-            <p className="text-gray-500 text-lg font-medium">No products found in this category yet.</p>
-            <p className="text-gray-400 text-sm mt-1">Check back soon for new handmade additions!</p>
+          <div className="bg-white rounded-3xl py-16 text-center border border-purple-100 shadow-sm">
+            <p className="text-gray-500 text-base font-medium">
+              No products found in "{formatTitle(slug)}" yet.
+            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
         )}
       </main>
-
-      <Footer />
     </div>
   )
 }

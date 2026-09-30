@@ -90,8 +90,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
-      <Navbar />
-
+      
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16 w-full">
         {/* Breadcrumb */}
         <nav className="mb-8 text-sm text-gray-500 flex items-center gap-2">
@@ -252,7 +251,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
         </div>
       </main>
 
-      <Footer />
+
     </div>
   )
 }
